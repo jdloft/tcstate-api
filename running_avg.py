@@ -14,11 +14,11 @@ states = []
 def update():
     print("Updating...")
     try:
-        timestamp = stream.download('api/running/')
+        timestamp = stream.download('running/')
     except requests.exceptions.ConnectionError:
         return
-    class_id = predictor.predict('api/running/' + str(timestamp) + '.jpg')
-    os.remove('api/running/' + str(timestamp) + '.jpg')
+    class_id = predictor.predict('running/' + str(timestamp) + '.jpg')
+    os.remove('running/' + str(timestamp) + '.jpg')
     if len(states) >= 6:
         states.pop()
     states.append(class_id)

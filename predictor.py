@@ -8,7 +8,7 @@ IMG_WIDTH = 150
 
 class Predictor:
     def __init__(self):
-        self.model = keras.models.load_model('api/model')
+        self.model = keras.models.load_model('model')
         self.probability_model = tf.keras.Sequential([self.model, tf.keras.layers.Softmax()])
         print(self.model.summary())
         self.class_map = {0: 'night', 1: 'empty', 2: 'med', 3: 'full'}

@@ -23,7 +23,7 @@ class_map = {0: 'night', 1: 'empty', 2: 'med', 3: 'full'}
 @app.route('/current', methods=['GET'])
 def current():
     output = {}
-    output['timestamp'] = stream.download('api/unclass/')
+    output['timestamp'] = stream.download('unclass/')
     avg = redis.get('running-avg')
     if avg is not None:
         output['average'] = float(redis.get('running-avg'))
@@ -33,12 +33,12 @@ def current():
 
 @app.route('/prediction/<timestamp>', methods=['GET'])
 def prediction(timestamp):
-    image = 'api/unclass/' + timestamp + '.jpg'
+    image = 'unclass/' + timestamp + '.jpg'
     output = {}
     output['class'] = predictor.predict(image)
     date = time.localtime(int(timestamp))
     tallies.tally(date.tm_wday, date.tm_hour, output['class'])
-    shutil.copy(image, 'api/sorted/' + predictor.class_map[output['class']] + '/' + os.path.basename(image))
+    shutil.copy(image, 'sorted/' + predictor.class_map[output['class']] + '/' + os.path.basename(image))
     return jsonify(output)
 
 @app.route('/suggest', methods=['POST'])
@@ -52,10 +52,10 @@ def submit():
     if timestamp is None or class_id is None:
         return '', 400
     
-    found = glob.glob('api/sorted/*/' + timestamp + '.jpg')
+    found = glob.glob('sorted/*/' + timestamp + '.jpg')
     print('Found:', found)
     if len(found) >= 1:
-        os.rename(found[0], 'api/sorted/' + class_map[class_id] + '/' + os.path.basename(found[0]))
+        os.rename(found[0], 'sorted/' + class_map[class_id] + '/' + os.path.basename(found[0]))
     
     return ''
 

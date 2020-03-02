@@ -23,7 +23,7 @@ class_map = {0: 'night', 1: 'empty', 2: 'med', 3: 'full'}
 @app.route('/current', methods=['GET'])
 def current():
     output = {}
-    output['timestamp'] = stream.download('unclass/')
+    output['timestamp'] = int(redis.get('current-img'))
     avg = redis.get('running-avg')
     if avg is not None:
         output['average'] = float(redis.get('running-avg'))
@@ -31,6 +31,7 @@ def current():
         output['average'] = 0.0
     return jsonify(output)
 
+# Deprecated
 @app.route('/prediction/<timestamp>', methods=['GET'])
 def prediction(timestamp):
     image = 'unclass/' + timestamp + '.jpg'
@@ -52,10 +53,10 @@ def submit():
     if timestamp is None or class_id is None:
         return '', 400
     
-    found = glob.glob('sorted/*/' + timestamp + '.jpg')
-    print('Found:', found)
-    if len(found) >= 1:
-        os.rename(found[0], 'sorted/' + class_map[class_id] + '/' + os.path.basename(found[0]))
+    img = 'img/' + timestamp + '.jpg'
+    if os.path.isfile(img):
+        print('Found:', img)
+        os.rename(img, 'suggested/' + class_map[class_id] + '/' + timestamp + '.jpg')
     
     return ''
 
@@ -67,9 +68,14 @@ def history():
     output['week'] = tallies.get_week()
     return jsonify(output)
 
-@app.route('/img/<path:path>')
-def return_img(path):
-    print('Serving static image ' + path, file=sys.stderr)
-    return send_from_directory('unclass', path)
+@app.route('/current-img.jpg', methods=['GET'])
+def current_img():
+    timestamp = str(int(redis.get('current-img')))
+    if os.path.isfile('img/' + timestamp + '.jpg'):
+        app.logger.info('Found current image')
+        return send_from_directory('img', timestamp + '.jpg')
+    else:
+        app.logger.info('Current image, img/%s.jpg', timestamp)
+        return '', 404
 
 app.run(port='12345')

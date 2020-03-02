@@ -3,9 +3,11 @@ import os
 import time
 import requests
 from stream import Stream
+from tallies import Tallies
 from predictor import Predictor
 
 stream = Stream()
+tallies = Tallies()
 predictor = Predictor()
 redis = Redis()
 
@@ -14,17 +16,23 @@ states = []
 def update():
     print("Updating...")
     try:
-        timestamp = stream.download('running/')
+        timestamp = stream.download('img/')
     except requests.exceptions.ConnectionError:
         return
-    class_id = predictor.predict('running/' + str(timestamp) + '.jpg')
-    os.remove('running/' + str(timestamp) + '.jpg')
+
+    class_id = predictor.predict('img/' + str(timestamp) + '.jpg')
+    date = time.localtime(int(timestamp))
+    tallies.tally(date.tm_wday, date.tm_hour, class_id)
+
     if len(states) >= 6:
         states.pop()
     states.append(class_id)
     print(states)
+
     new_avg = avg()
+    print("Current img " + str(timestamp))
     print("Average: " + str(new_avg))
+    redis.set('current-img', timestamp)
     redis.set('running-avg', new_avg)
 
 def avg():

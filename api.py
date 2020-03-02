@@ -23,7 +23,14 @@ class_map = {0: 'night', 1: 'empty', 2: 'med', 3: 'full'}
 @app.route('/current', methods=['GET'])
 def current():
     output = {}
-    output['timestamp'] = int(redis.get('current-img'))
+    current_img = redis.get('current-img')
+    if current_img is not None:
+        output['timestamp'] = int(current_img)
+
+    current_pred = redis.get('current-pred')
+    if current_pred is not None:
+        output['state'] = int(current_pred)
+
     avg = redis.get('running-avg')
     if avg is not None:
         output['average'] = float(redis.get('running-avg'))
@@ -56,7 +63,8 @@ def submit():
     img = 'img/' + timestamp + '.jpg'
     if os.path.isfile(img):
         print('Found:', img)
-        os.rename(img, 'suggested/' + class_map[class_id] + '/' + timestamp + '.jpg')
+        predictor.retrain(img, class_id)
+        redis.set('update-model', 1)
     
     return ''
 

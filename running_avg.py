@@ -30,9 +30,10 @@ def update():
     print(states)
 
     new_avg = avg()
-    print("Current img " + str(timestamp))
+    print("Current img " + str(timestamp) + " prediction: " + str(class_id))
     print("Average: " + str(new_avg))
     redis.set('current-img', timestamp)
+    redis.set('current-pred', class_id)
     redis.set('running-avg', new_avg)
 
 def avg():
@@ -44,6 +45,11 @@ def avg():
 starttime = time.time()
 interval = 10.0
 while True:
+    reload = redis.get('update-model')
+    if reload is not None and int(reload) == 1:
+        print("Reloading!")
+        predictor.reload()
+        redis.set('update-model', 0)
     update()
     print('Sleeping %s...' % int((interval - ((time.time() - starttime) % interval))))
     time.sleep(interval - ((time.time() - starttime) % interval))

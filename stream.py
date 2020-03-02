@@ -7,6 +7,8 @@ class Stream:
 
     def download(self, dir):
         r = requests.get(self.url)
+        if r.status_code != 200:
+            return None
         timestamp = int(time.time())
         with open(dir + str(timestamp) + '.jpg', 'wb') as f:
             f.write(r.content)

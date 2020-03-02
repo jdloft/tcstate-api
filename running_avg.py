@@ -17,7 +17,12 @@ def update():
     print("Updating...")
     try:
         timestamp = stream.download('img/')
-    except requests.exceptions.ConnectionError:
+    except:
+        print("Error downloading new stream")
+        return
+
+    if timestamp is None:
+        print("Stream downloader returned None (probably 500 error from server)")
         return
 
     class_id = predictor.predict('img/' + str(timestamp) + '.jpg')

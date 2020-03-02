@@ -7,14 +7,12 @@ import shutil
 import time
 import sys
 from redis import Redis
-from stream import Stream
 from predictor import Predictor
 from tallies import Tallies
 
 app = flask.Flask(__name__)
 app.config['DEBUG'] = True
 
-stream = Stream()
 predictor = Predictor()
 tallies = Tallies()
 redis = Redis()
@@ -63,8 +61,10 @@ def submit():
     img = 'img/' + timestamp + '.jpg'
     if os.path.isfile(img):
         print('Found:', img)
-        predictor.retrain(img, class_id)
-        redis.set('update-model', 1)
+        pipeline = redis.pipeline()
+        pipeline.rpush('suggestions-times', timestamp)
+        pipeline.rpush('suggestions-states', class_id)
+        pipeline.execute()
     
     return ''
 
@@ -83,7 +83,7 @@ def current_img():
         app.logger.info('Found current image')
         return send_from_directory('img', timestamp + '.jpg')
     else:
-        app.logger.info('Current image, img/%s.jpg', timestamp)
+        app.logger.info('Current image not found: img/%s.jpg', timestamp)
         return '', 404
 
 app.run(port='12345')

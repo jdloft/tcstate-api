@@ -29,13 +29,3 @@ class Predictor:
 
     def reload(self):
         self.model = keras.models.load_model('model')
-
-    def retrain(self, img, class_id):
-        with open(img, 'rb') as input:
-            test_image = tf.image.decode_jpeg(input.read())
-        test_image = tf.image.resize(test_image, (IMG_HEIGHT, IMG_WIDTH)).numpy()
-        test_image = test_image / 255.0
-        one_hot = [0 for i in range(4)]
-        one_hot[class_id] = 1
-        self.model.fit(np.array([test_image]), np.array([one_hot]))
-        self.model.save('model')

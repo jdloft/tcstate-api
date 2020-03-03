@@ -7,13 +7,10 @@ import shutil
 import time
 import sys
 from redis import Redis
-from predictor import Predictor
 from tallies import Tallies
 
 app = flask.Flask(__name__)
-app.config['DEBUG'] = True
 
-predictor = Predictor()
 tallies = Tallies()
 redis = Redis()
 class_map = {0: 'night', 1: 'empty', 2: 'med', 3: 'full'}
@@ -36,26 +33,15 @@ def current():
         output['average'] = 0.0
     return jsonify(output)
 
-# Deprecated
-@app.route('/prediction/<timestamp>', methods=['GET'])
-def prediction(timestamp):
-    image = 'unclass/' + timestamp + '.jpg'
-    output = {}
-    output['class'] = predictor.predict(image)
-    date = time.localtime(int(timestamp))
-    tallies.tally(date.tm_wday, date.tm_hour, output['class'])
-    shutil.copy(image, 'sorted/' + predictor.class_map[output['class']] + '/' + os.path.basename(image))
-    return jsonify(output)
-
 @app.route('/suggest', methods=['POST'])
 def submit():
     try:
         timestamp = request.args.get('timestamp')
-        class_id = int(request.args.get('class'))
+        state = int(request.args.get('state'))
     except ValueError:
         return '', 400
 
-    if timestamp is None or class_id is None:
+    if timestamp is None or state is None:
         return '', 400
     
     img = 'img/' + timestamp + '.jpg'
@@ -63,7 +49,7 @@ def submit():
         print('Found:', img)
         pipeline = redis.pipeline()
         pipeline.rpush('suggestions-times', timestamp)
-        pipeline.rpush('suggestions-states', class_id)
+        pipeline.rpush('suggestions-states', state)
         pipeline.execute()
     
     return ''
@@ -86,4 +72,4 @@ def current_img():
         app.logger.info('Current image not found: img/%s.jpg', timestamp)
         return '', 404
 
-app.run(port='12345')
+app.run(host='0.0.0.0', port='12345')

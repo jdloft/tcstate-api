@@ -32,7 +32,7 @@ class Tallies:
                 avg = self.redis.get('day:' + str(day) + ':' + str(hr) + ':avg')
                 if avg is not None:
                     avgs += float(avg)
-            self.redis.set('day:' + str(day) + ':avg', float(avgs) / 7)
+            self.redis.set('day:' + str(day) + ':avg', float(avgs) / 16)
 
     def get_day(self, day):
         out = []

@@ -29,9 +29,9 @@ def update():
     date = time.localtime(int(timestamp))
     tallies.tally(date.tm_wday, date.tm_hour, class_id)
 
-    if len(states) >= 6:
+    if len(states) >= (5 * 6):
         states.pop()
-    states.append(class_id)
+    states.insert(0, class_id)
     print(states)
 
     new_avg = avg()
